@@ -1,0 +1,100 @@
+
+<html>
+  
+  <head>
+    <title>WebGL</title>
+    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+    
+    <script type="text/javascript" src="gl-matrix-min.js"></script>
+    <script type="text/javascript" src="webgl-utils.js"></script>
+    <script type="text/javascript" src="keyregisterer.js"></script>
+    
+    <script id="shader-fs" type="x-shader/x-fragment">
+      precision mediump float;
+      
+      varying vec4 vColor;
+
+      void main(void) {
+        gl_FragColor = vColor;
+      }
+    </script>
+    
+    <script id="shader-vs" type="x-shader/x-vertex">
+      attribute vec3 aVertexPosition;
+      
+	  uniform mat4 rotMat;
+      uniform mat4 uMVMatrix;
+      uniform mat4 uPMatrix;
+      uniform mat4 uNMatrix;
+
+      varying vec4 vColor;
+      
+      void main(void) {
+	    vec4 relpos = uPMatrix * uMVMatrix * rotMat * vec4(aVertexPosition, 1.0);
+        gl_Position = relpos;
+	    vec4 absPosition =  uNMatrix * vec4(aVertexPosition, 1.0);
+		vColor = absPosition;
+      }
+    </script>
+    
+    <script src="colorHolder.js"></script>
+
+    <script src="glFunctions.js"></script>
+    
+    <script src="main.js"></script>
+    
+    <link rel="stylesheet" href="styles.css">
+  
+  </head>
+  
+  
+  <body onLoad="webGLStart();">
+      <canvas id="cc" style="border: none;"></canvas>
+	  <script>
+		var uploadColors = [];
+		function getImgColors(){
+			var img = document.getElementById("imgHolder");
+			var reader = new FileReader();
+			var canvas = document.getElementById("holderCanvas");
+			var context = canvas.getContext("2d");
+			img.addEventListener("load", function(){
+				console.log(reader.result);
+				canvas.width = img.width;
+				canvas.height = img.height;
+				context.drawImage(document.getElementById('imgHolder'),0,0);
+				var imgData = context.getImageData(0, 0, canvas.width, canvas.height);
+				uploadColors = [];
+				for(var i=0; i<imgData.data.length; i+=4){
+					uploadColors.push([]);
+					for(var j=0;j<3;j++){
+						uploadColors[i/4].push(imgData.data[i+j])
+					}
+				}
+				addItemsToDrawables(uploadColors, document.getElementById("numColors").value, document.getElementById("distEdge").value);			
+			}, false);
+			
+			reader.addEventListener("load", function () {
+				img.src = reader.result;
+			}, false);
+			
+			reader.readAsDataURL(document.getElementById("imgUpload").files[0]);
+		}
+		function resizeBoxes(){
+			if(document.getElementById("imgHolder").src != ""){
+				addItemsToDrawables(uploadColors, document.getElementById("numColors").value, parseInt(document.getElementById("distEdge").value));
+			}else{
+				addItemsToDrawables(constLightColors, document.getElementById("numColors").value, parseInt(document.getElementById("distEdge").value));
+			}
+		}
+		</script>
+	  <div id="inputs">
+		Image Upload: <input id="imgUpload" type="file" onchange="getImgColors()"></input><br />
+		Boxes per Axis: <input id="numColors" type="range" min="2" max="32" value="12" onchange="resizeBoxes()"></input><br />
+		Dist between colors: <input id="distEdge" type="range" min="0" max="32" value="12" onchange="resizeBoxes()"></input>
+	  </div>
+	  <img style="visibility:hidden;position:fixed;top:100%;" id="imgHolder" />
+	  <canvas style="visibility:hidden;position:fixed;top:100%;" id="holderCanvas"></canvas>
+	  <img style="visibility:hidden;position:fixed;top:100%;" id="imgHolder" />
+	  <canvas style="visibility:hidden;position:fixed;top:100%;" id="holderCanvas"></canvas>  </body>
+
+</html>
